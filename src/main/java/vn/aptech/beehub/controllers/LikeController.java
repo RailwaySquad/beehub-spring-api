@@ -57,7 +57,7 @@ public class LikeController {
 		return ResponseEntity.ok(likeService.addLike(dto)); 
 	}
 	@PostMapping(value = "/like/update")
-	public ResponseEntity<LikeUser>update(@RequestBody @Validated LikeDto dto){ 
+	public ResponseEntity<LikeDto>update(@RequestBody @Validated LikeDto dto){ 
 		return ResponseEntity.ok(likeService.updateLike(dto)); 
 	}	
 	@PostMapping(value = "/like/remove/{userid}/{postid}")

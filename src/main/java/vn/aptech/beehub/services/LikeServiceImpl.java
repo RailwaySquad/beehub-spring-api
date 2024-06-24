@@ -74,7 +74,7 @@ public class LikeServiceImpl implements LikeService {
         }
 			
 	}
-	public LikeUser updateLike(LikeDto dto) {
+	public LikeDto updateLike(LikeDto dto) {
 		Optional<Post> optionalPost = postRepository.findById(dto.getPost());
         Optional<User> optionalUser = userRepository.findById(dto.getUser());
         if(optionalPost.isPresent() && optionalUser.isPresent()) {
@@ -84,7 +84,12 @@ public class LikeServiceImpl implements LikeService {
         	if(like !=null) {
         		like.setEnumEmo(dto.getEnumEmo());
         		LikeUser likeUpdate = likeRepository.save(like);
-        		return likeUpdate;
+        		return LikeDto.builder()
+        				.id(like.getId())
+        				.enumEmo(like.getEnumEmo())
+        				.user(like.getUser().getId())
+        				.post(like.getPost().getId())
+        				.build();
         	}else {
         		 throw new RuntimeException("Like không tồn tại.");
         	}
@@ -184,34 +189,62 @@ public class LikeServiceImpl implements LikeService {
 		return notificationRepository.findNoteByUser(userid);
 	}
 	private NotificationDto sendNotification(LikeUser likeUser) {
-		Optional<Post> optionalPost = postRepository.findById(likeUser.getPost().getId());
-		Optional<User> optionalUser = userRepository.findById(likeUser.getUser().getId());
-		
-		if(optionalPost.isPresent() && optionalUser.isPresent()) {
-			Post post = optionalPost.get();
-			User liker = optionalUser.get();
-			
-			String notificationContent = String.format("%s liked your post.", liker.getFullname());		
-			Notification notification = new Notification();
-			notification.setContent(notificationContent);
-			notification.setUser(post.getUser()); // Send notification to the post owner
-            notification.setPost(post);
-            notification.setNotificationType(NotificationType.LIKE); 
-            notification.setSeen(false);
-            notification.setCreatedAt(LocalDateTime.now());
-            
-             //Save the notification to the database
-            var noti = notificationRepository.save(notification); 
-            return NotificationDto.builder()
-            		.id(noti.getId())
-            		.user(noti.getUser().getId())
-            		.post(noti.getPost().getId())
-            		.content(notificationContent)
-            		.createdAt(noti.getCreatedAt())
-            		.notificationType(noti.getNotificationType())
-            		.build();
-		}
-		return new NotificationDto();
+	    Optional<Post> optionalPost = postRepository.findById(likeUser.getPost().getId());
+	    Optional<User> optionalUser = userRepository.findById(likeUser.getUser().getId());
+
+	    if (optionalPost.isPresent() && optionalUser.isPresent()) {
+	        Post post = optionalPost.get();
+	        User liker = optionalUser.get();
+
+	        // Check if there is an existing LIKE notification for this post
+	        Optional<Notification> existingNotification = notificationRepository
+	                .findByPostAndNotificationType(post, NotificationType.LIKE);
+
+	        String notificationContent;
+	        if (existingNotification.isPresent()) {
+	            // If an existing LIKE notification is found, update its content
+	            notificationContent = String.format("%s and other people liked your post.", liker.getFullname());
+	            Notification notification = existingNotification.get();
+	            notification.setContent(notificationContent);
+	            notification.setCreatedAt(LocalDateTime.now());
+	            notification.setSeen(false);
+
+	            // Save the updated notification
+	            notificationRepository.save(notification);
+
+	            return NotificationDto.builder()
+	                    .id(notification.getId())
+	                    .user(notification.getUser().getId())
+	                    .post(notification.getPost().getId())
+	                    .content(notificationContent)
+	                    .createdAt(notification.getCreatedAt())
+	                    .notificationType(notification.getNotificationType())
+	                    .build();
+	        } else {
+	            // If no existing LIKE notification, create a new one
+	            notificationContent = String.format("%s liked your post.", liker.getFullname());
+	            Notification notification = new Notification();
+	            notification.setContent(notificationContent);
+	            notification.setUser(post.getUser()); // Send notification to the post owner
+	            notification.setPost(post);
+	            notification.setNotificationType(NotificationType.LIKE);
+	            notification.setSeen(false);
+	            notification.setCreatedAt(LocalDateTime.now());
+
+	            // Save the new notification to the database
+	            Notification savedNotification = notificationRepository.save(notification);
+
+	            return NotificationDto.builder()
+	                    .id(savedNotification.getId())
+	                    .user(savedNotification.getUser().getId())
+	                    .post(savedNotification.getPost().getId())
+	                    .content(notificationContent)
+	                    .createdAt(savedNotification.getCreatedAt())
+	                    .notificationType(savedNotification.getNotificationType())
+	                    .build();
+	        }
+	    }
+	    return new NotificationDto();
 	}
 	public void changeSeenNote(int id) {
 		Optional<Notification> optionalNotification = notificationRepository.findById(id);

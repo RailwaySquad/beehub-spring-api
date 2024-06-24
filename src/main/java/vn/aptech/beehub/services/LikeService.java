@@ -10,7 +10,7 @@ import vn.aptech.beehub.models.Notification;
 
 public interface LikeService {
 	NotificationDto addLike(LikeDto dto);
-	LikeUser updateLike(LikeDto dto);
+	LikeDto updateLike(LikeDto dto);
 	boolean removeLike(Long postId, Long userId);
 	boolean checklike(Long postId, Long userId);
 	String getEnumEmoByUserIdAndPostId(Long postId, Long userId);
