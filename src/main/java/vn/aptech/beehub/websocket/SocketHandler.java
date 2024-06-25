@@ -94,9 +94,7 @@ public class SocketHandler extends TextWebSocketHandler {
                     var email = user.getEmail(); // receiver email
                     for (WebSocketSession webSocketSession : sessions) { // loop through every socket
                         if (webSocketSession.isOpen()) {
-                            Principal principal = null;
-                            Object object = webSocketSession.getAttributes().get("principal");
-                            if (object instanceof Principal) principal = (Principal) object;
+                            Principal principal = getPrincipal(webSocketSession);
 
                             if (principal != null && email.equals(principal.getName())) { // looking for a principal match the email of receiver
                                 LOGGER.info("sent");
@@ -114,13 +112,10 @@ public class SocketHandler extends TextWebSocketHandler {
                     var user = gm.getUser();
                     var userEmail = user.getEmail();
                     if (!Objects.equals(user.getId(), userMessage.getCreatorId())) { // if user is not sender
-                        LOGGER.info(user.getId().toString());
-                        LOGGER.info(userMessage.getCreatorId().toString());
                         for (WebSocketSession webSocketSession : sessions) { // loop through every socket
                             if (webSocketSession.isOpen()) {
-                                Principal principal = null;
-                                Object object = webSocketSession.getAttributes().get("principal");
-                                if (object instanceof Principal) principal = (Principal) object;
+                                Principal principal = getPrincipal(webSocketSession);
+
                                 if (principal != null) {
                                     String principalEmail = principal.getName();
                                     if (principalEmail.equals(userEmail)) {
@@ -143,9 +138,7 @@ public class SocketHandler extends TextWebSocketHandler {
             	String receiverEmail = userRepository.findById(noti.getUser()).map(User::getEmail).get();
             	for (WebSocketSession webSocketSession : sessions) { // loop through every socket
                     if (webSocketSession.isOpen()) {
-                        Principal principal = null;
-                        Object object = webSocketSession.getAttributes().get("principal");
-                        if (object instanceof Principal) principal = (Principal) object;
+                        Principal principal = getPrincipal(webSocketSession);
 
                         if (principal != null && receiverEmail.equals(principal.getName())) { // looking for a principal match the email of receiver
                             try {
@@ -169,9 +162,7 @@ public class SocketHandler extends TextWebSocketHandler {
                 if (receiverEmail != null) { // Nếu tìm thấy email của chủ sở hữu bài post
                     for (WebSocketSession webSocketSession : sessions) { // Lặp qua tất cả các socket
                         if (webSocketSession.isOpen()) {
-                            Principal principal = null;
-                            Object object = webSocketSession.getAttributes().get("principal");
-                            if (object instanceof Principal) principal = (Principal) object;
+                            Principal principal = getPrincipal(webSocketSession);
 
                             if (principal != null && receiverEmail.equals(principal.getName())) { // Tìm principal khớp với email của người nhận
                                 try {
@@ -190,6 +181,13 @@ public class SocketHandler extends TextWebSocketHandler {
             default:
                 break;
         }
+    }
+
+    private Principal getPrincipal(WebSocketSession session) {
+        Principal principal = null;
+        Object object = session.getAttributes().get("principal");
+        if (object instanceof Principal) principal = (Principal) object;
+        return principal;
     }
 
     private TextMessage getTextMessage(String type, Object data) throws JsonProcessingException {
