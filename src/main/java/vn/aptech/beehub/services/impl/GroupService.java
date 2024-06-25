@@ -208,13 +208,7 @@ public class GroupService implements IGroupService {
 				groupDto.setReports_of_group(reports);
 			}
 			if(checkMember.isPresent() || group.get().isPublic_group()) {
-				if(checkMember.isPresent()) {
-					groupDto.setMember_role(checkMember.get().getRole().toString());
-					groupDto.setJoined("joined");;
-				}else {
-					Optional<Requirement> reqJoin = requireRep.findRequirementJoinGroup(id_user, group.get().getId());
-					if(reqJoin.isPresent()) {groupDto.setJoined("send request");}else{groupDto.setJoined(null);}
-				}
+				
 				List<GroupMemberDto> members = new LinkedList<GroupMemberDto>();
 				groupMemberRep.findByGroup_id(id_group).forEach((gm)->{
 					String relationship = null;
@@ -244,6 +238,7 @@ public class GroupService implements IGroupService {
 							relationship
 							));
 				});
+				
 				List<GroupMediaDto> list_media = new LinkedList<GroupMediaDto>();
 				groupMediaRep.findByGroup_id(id_group).forEach((media)->{
 					list_media.add(new GroupMediaDto(
@@ -258,6 +253,14 @@ public class GroupService implements IGroupService {
 				groupDto.setGroup_members(members);
 				groupDto.setGroup_medias(list_media);
 			}	
+			if(checkMember.isPresent()) {
+				groupDto.setMember_role(checkMember.get().getRole().toString());
+				groupDto.setJoined("joined");;
+			}else {
+				Optional<Requirement> reqJoin = requireRep.findRequirementJoinGroup(id_user, group.get().getId());
+				logger.info(reqJoin.toString());
+				if(reqJoin.isPresent()) {groupDto.setJoined("send request");}else{groupDto.setJoined(null);}
+			}
 			groupDto.setPost_count(postRep.countPostsInGroup(id_group));
 			int count_member = groupMemberRep.findByGroup_id(id_group).size();
 			groupDto.setMember_count(count_member);
