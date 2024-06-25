@@ -14,11 +14,14 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import vn.aptech.beehub.dto.LikeDto;
 import vn.aptech.beehub.dto.NotificationDto;
 import vn.aptech.beehub.models.GroupMember;
+import vn.aptech.beehub.models.Post;
 import vn.aptech.beehub.models.User;
 import vn.aptech.beehub.payload.response.GetMessageResponse;
 import vn.aptech.beehub.repository.GroupMemberRepository;
+import vn.aptech.beehub.repository.PostRepository;
 import vn.aptech.beehub.repository.UserRepository;
 
 import java.io.IOException;
@@ -31,7 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SocketHandler extends TextWebSocketHandler {
 
     private final UserRepository userRepository;
-
+    private final PostRepository postRepository;
     @Autowired
     UserDetailsService userDetailsService;
 
@@ -42,8 +45,9 @@ public class SocketHandler extends TextWebSocketHandler {
     private GroupMemberRepository groupMemberRepository;
 
     @Autowired
-    SocketHandler(UserRepository userRepository, ObjectMapper objectMapper) {
+    SocketHandler(UserRepository userRepository, ObjectMapper objectMapper,PostRepository postRepository) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -155,6 +159,34 @@ public class SocketHandler extends TextWebSocketHandler {
             	LOGGER.info(receiverEmail);
             	break;
             }
+            case "SEND_LIKE": {
+                LikeDto like = getLikeDtoResponse(socketMessage.getData());
+                String receiverEmail = postRepository.findById(like.getPost())
+                    .map(Post::getUser)  // Lấy người dùng sở hữu bài post
+                    .map(User::getEmail) // Lấy email của người dùng đó
+                    .orElse(null);
+
+                if (receiverEmail != null) { // Nếu tìm thấy email của chủ sở hữu bài post
+                    for (WebSocketSession webSocketSession : sessions) { // Lặp qua tất cả các socket
+                        if (webSocketSession.isOpen()) {
+                            Principal principal = null;
+                            Object object = webSocketSession.getAttributes().get("principal");
+                            if (object instanceof Principal) principal = (Principal) object;
+
+                            if (principal != null && receiverEmail.equals(principal.getName())) { // Tìm principal khớp với email của người nhận
+                                try {
+                                    webSocketSession.sendMessage(getTextMessage("RECEIVE_LIKE", like)); // Gửi
+                                } catch (IOException e) {
+                                    LOGGER.info(e.getMessage());
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    LOGGER.info("Email of the post owner not found");
+                }
+                break;
+            }
             default:
                 break;
         }
@@ -176,5 +208,8 @@ public class SocketHandler extends TextWebSocketHandler {
 
     private NotificationDto getNotificationDtoResponse(String data) throws JsonProcessingException {
     	return objectMapper.readValue(data, NotificationDto.class);
+    }
+    private LikeDto getLikeDtoResponse(String data) throws JsonProcessingException {
+    	return objectMapper.readValue(data, LikeDto.class);
     }
 }

@@ -306,6 +306,42 @@ public class UserController {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	    }
 	}
+	@PostMapping(value = "/upload/group/{idGr}/image/{id}")
+	public ResponseEntity<Boolean> uploadImageGroupFlutter(@PathVariable("idGr") Long idGr ,@PathVariable("id") Long id,@RequestParam(name= "media",required = true) MultipartFile media) {
+	    try {
+	        if (media != null && !media.isEmpty()) {
+	            String fileUrl = s3Service.uploadToS3(media.getInputStream(), media.getOriginalFilename());
+	            GroupDto group = groupService.getGroup(id, idGr);
+	            group.setImage_group(fileUrl);
+	            boolean result = groupService.uploadImage(id,group);
+	            return ResponseEntity.ok(result);
+	        }else {
+	        	logger.error("Not found media");
+	        	return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+	        }
+	    } catch (Exception e) {
+	        logger.error(e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	}
+	@PostMapping(value = "/upload/group/{idGr}/background/{id}")
+	public ResponseEntity<Boolean> uploadBackgroundGroupFlutter(@PathVariable("idGr") Long idGr ,@PathVariable("id") Long id,@RequestParam(name= "media",required = true) MultipartFile media) {
+	    try {
+	        if (media != null && !media.isEmpty()) {
+	            String fileUrl = s3Service.uploadToS3(media.getInputStream(), media.getOriginalFilename());
+	            GroupDto group = groupService.getGroup(id, idGr);
+	            group.setBackground_group(fileUrl);
+	            boolean result = groupService.uploadBackground(id,group);
+	            return ResponseEntity.ok(result);
+	        }else {
+	        	logger.error("Not found media");
+	        	return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+	        }
+	    } catch (Exception e) {
+	        logger.error(e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	}
 	@PostMapping(value="/user/create-group/{id}")
 	public ResponseEntity<Long> createGroup2(@PathVariable("id") Long id,@RequestParam(name= "background",required = false) MultipartFile background,@RequestParam(name= "image",required = false) MultipartFile imageGroup, @ModelAttribute  GroupDto group)throws InterruptedException{
 			if (background != null && !background.isEmpty()) {
