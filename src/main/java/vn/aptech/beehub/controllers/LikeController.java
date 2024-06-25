@@ -44,8 +44,8 @@ public class LikeController {
 		return ResponseEntity.ok(result);
 	}
 	@GetMapping(value = "/like/{postid}")
-	public ResponseEntity<List<LikeUserDto>> findLikeUserByPostId(@PathVariable("postid") Long postid){
-		List<LikeUserDto> result = likeService.findLikeUserByPost(postid);
+	public ResponseEntity<List<LikeDto>> findLikeUserByPostId(@PathVariable("postid") Long postid){
+		List<LikeDto> result = likeService.findLikeUserByPost(postid);
 		return ResponseEntity.ok(result);
 	}
 	@GetMapping(value = "/like/user/{postid}")
@@ -61,7 +61,7 @@ public class LikeController {
 		return ResponseEntity.ok(likeService.updateLike(dto)); 
 	}	
 	@PostMapping(value = "/like/remove/{userid}/{postid}")
-	public ResponseEntity<Boolean> delete(@PathVariable("userid") Long userid, @PathVariable("postid") Long postid){ 
+	public ResponseEntity<LikeDto> delete(@PathVariable("userid") Long userid, @PathVariable("postid") Long postid){ 
 		return ResponseEntity.ok(likeService.removeLike(postid, userid)); 
 	}
 	@GetMapping(value = "/check/{userid}/{postid}")

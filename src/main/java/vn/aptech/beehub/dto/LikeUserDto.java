@@ -16,4 +16,5 @@ public class LikeUserDto {
     private Long user;
     private String username;
     private String gender;
+    private Long post;
 }

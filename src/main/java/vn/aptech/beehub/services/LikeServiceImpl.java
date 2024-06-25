@@ -98,7 +98,7 @@ public class LikeServiceImpl implements LikeService {
         }
 	}
 
-	public boolean removeLike(Long postId, Long userId) {
+	public LikeDto removeLike(Long postId, Long userId) {
         // Kiểm tra xem bài viết và người dùng tồn tại hay không
         Optional<Post> optionalPost = postRepository.findById(postId);
         Optional<User> optionalUser = userRepository.findById(userId);
@@ -111,12 +111,17 @@ public class LikeServiceImpl implements LikeService {
             LikeUser like = likeRepository.findByPostAndUser(post, user);
             if (like != null) {
                 likeRepository.delete(like);
-                return true; // Thành công khi xóa like
+                return LikeDto.builder()
+        				.id(like.getId())
+        				.enumEmo(like.getEnumEmo())
+        				.user(like.getUser().getId())
+        				.post(like.getPost().getId())
+        				.build(); 
             } else {
-                return false; // Không có like để xóa
+                return null; // Không có like để xóa
             }
         } else {
-            return false; // Bài viết hoặc người dùng không tồn tại
+            return null; // Bài viết hoặc người dùng không tồn tại
         }
     }
 	public List<LikeUser> findEmoByPostEnum(Long postId,String emoji){
@@ -151,13 +156,14 @@ public class LikeServiceImpl implements LikeService {
 	         return null;
 	     }
 	}
-	public List<LikeUserDto> findLikeUserByPost(Long postId){
+	public List<LikeDto> findLikeUserByPost(Long postId){
 		Optional<Post> optionalPost = postRepository.findById(postId);
 		Post post = optionalPost.get();
-		List<LikeUserDto> likeUsers = likeRepository.findByPost(post).stream().map((user) ->
-				LikeUserDto.builder()
+		List<LikeDto> likeUsers = likeRepository.findByPost(post).stream().map((user) ->
+				LikeDto.builder()
+						.id(user.getId())
 						.user(user.getUser().getId())
-						.username(user.getUser().getUsername())
+						.post(user.getPost().getId())
 						.enumEmo(user.getEnumEmo())
 						.build()).toList();
 		return likeUsers;
